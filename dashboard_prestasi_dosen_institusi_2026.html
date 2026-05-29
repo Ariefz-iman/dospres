@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Prestasi Dosen & Institusi 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg:#f0f4f8; --card:#ffffff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b;
+      --blue:#2563eb; --teal:#0891b2; --green:#059669; --amber:#d97706; --violet:#7c3aed; --rose:#e11d48;
+      --blue-t:#dbeafe; --teal-t:#cffafe; --green-t:#d1fae5; --amber-t:#fef3c7; --violet-t:#ede9fe; --rose-t:#ffe4e6;
+      --shadow:0 18px 45px rgba(15,23,42,.08);
+      --shadow2:0 24px 60px rgba(15,23,42,.13);
+      --radius:16px;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; font-family:Poppins, sans-serif; color:var(--text); background:
+      radial-gradient(circle at top left, rgba(37,99,235,.13), transparent 28%),
+      radial-gradient(circle at top right, rgba(8,145,178,.12), transparent 30%),
+      var(--bg);
+    }
+    .wrap { max-width:1280px; margin:0 auto; padding:34px 22px 46px; }
+    header { text-align:center; margin:8px auto 28px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; background:white; border:1px solid var(--border); box-shadow:0 8px 22px rgba(15,23,42,.06); color:var(--teal); font-weight:800; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+    h1 { margin:14px 0 8px; font-size:clamp(30px,5vw,54px); line-height:1.05; font-weight:800; letter-spacing:-.04em; }
+    h1 span { color:var(--blue); }
+    .subtitle { margin:0 auto; max-width:780px; color:var(--muted); font-size:15px; line-height:1.7; }
+    .divider { width:72px; height:6px; margin:20px auto 0; border-radius:999px; background:linear-gradient(90deg,var(--blue),var(--teal)); }
+    .toolbar { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; margin:26px 0 18px; }
+    .pill { display:inline-flex; align-items:center; gap:9px; padding:10px 14px; border-radius:999px; background:white; border:1px solid var(--border); box-shadow:0 10px 25px rgba(15,23,42,.06); font-weight:700; color:#334155; }
+    .dot { width:9px; height:9px; border-radius:50%; background:var(--green); box-shadow:0 0 0 6px rgba(5,150,105,.15); }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; }
+    button, .fileBtn {
+      border:0; cursor:pointer; font-family:Poppins,sans-serif; font-weight:800; border-radius:12px; padding:11px 15px;
+      background:linear-gradient(135deg,var(--blue),var(--teal)); color:white; box-shadow:0 12px 25px rgba(37,99,235,.20); transition:.2s ease;
+    }
+    button.secondary { background:white; color:var(--blue); border:1px solid var(--border); box-shadow:0 10px 20px rgba(15,23,42,.06); }
+    button:hover, .fileBtn:hover { transform:translateY(-2px); box-shadow:var(--shadow2); }
+    input[type=file] { display:none; }
+    .filters { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+    .filter { background:white; border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; box-shadow:0 10px 24px rgba(15,23,42,.05); }
+    .filter label { display:block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:7px; }
+    .filter select, .filter input { width:100%; border:1px solid var(--border); border-radius:11px; padding:10px 11px; font-family:Poppins,sans-serif; outline:none; background:#f8fafc; }
+    .grid-kpi { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:16px; }
+    .card { background:rgba(255,255,255,.92); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; transition:.22s ease; animation:fadeUp .65s both; }
+    .card:hover { transform:translateY(-5px); box-shadow:var(--shadow2); }
+    .kpi { position:relative; overflow:hidden; min-height:150px; }
+    .kpi::after { content:""; position:absolute; right:-32px; top:-32px; width:110px; height:110px; border-radius:50%; opacity:.85; }
+    .kpi.blue { border-left:6px solid var(--blue); } .kpi.blue::after { background:var(--blue-t); }
+    .kpi.teal { border-left:6px solid var(--teal); } .kpi.teal::after { background:var(--teal-t); }
+    .kpi.green { border-left:6px solid var(--green); } .kpi.green::after { background:var(--green-t); }
+    .kpi.amber { border-left:6px solid var(--amber); } .kpi.amber::after { background:var(--amber-t); }
+    .kpi .icon { font-size:26px; margin-bottom:13px; position:relative; z-index:1; }
+    .kpi .label { color:var(--muted); font-weight:700; font-size:13px; }
+    .kpi .value { font-size:30px; line-height:1.15; font-weight:800; margin-top:6px; position:relative; z-index:1; }
+    .kpi .note { color:var(--muted); font-size:12px; margin-top:8px; position:relative; z-index:1; }
+    .row2 { display:grid; grid-template-columns:1.1fr .9fr; gap:16px; margin-bottom:16px; }
+    .row3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:16px; }
+    .card-title { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .card-title h2 { margin:0; font-size:17px; font-weight:800; letter-spacing:-.02em; }
+    .card-title p { margin:3px 0 0; color:var(--muted); font-size:12px; }
+    .chart { height:360px; }
+    .chart.small { height:305px; }
+    .insights { display:grid; grid-template-columns:1.1fr .9fr; gap:16px; margin-bottom:16px; }
+    .list { display:flex; flex-direction:column; gap:10px; }
+    .item { display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:14px; background:#f8fafc; border:1px solid var(--border); }
+    .badge { min-width:34px; height:34px; display:grid; place-items:center; border-radius:10px; font-weight:800; color:white; background:linear-gradient(135deg,var(--blue),var(--teal)); }
+    .item b { display:block; font-size:13px; }
+    .item span { color:var(--muted); font-size:12px; }
+    .table-card { padding:0; overflow:hidden; }
+    .table-head { padding:18px; display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid var(--border); }
+    .table-wrap { max-height:410px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; font-size:12.5px; }
+    th { position:sticky; top:0; background:#f8fafc; z-index:2; text-align:left; color:#475569; font-weight:800; border-bottom:1px solid var(--border); padding:12px; white-space:nowrap; }
+    td { border-bottom:1px solid #edf2f7; padding:12px; vertical-align:top; }
+    tr:hover td { background:#f8fafc; }
+    a { color:var(--blue); font-weight:700; text-decoration:none; }
+    .fade1 { animation-delay:.05s } .fade2 { animation-delay:.1s } .fade3 { animation-delay:.15s } .fade4 { animation-delay:.2s } .fade5 { animation-delay:.25s } .fade6 { animation-delay:.3s }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+    @media(max-width:980px) { .grid-kpi,.filters,.row3,.insights { grid-template-columns:1fr 1fr; } .row2 { grid-template-columns:1fr; } }
+    @media(max-width:650px) { .grid-kpi,.filters,.row3,.insights { grid-template-columns:1fr; } .toolbar,.table-head { align-items:stretch; flex-direction:column; } .actions { width:100%; } button,.fileBtn { width:100%; text-align:center; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">🏆 Dashboard Prestasi 2026</div>
+      <h1>Prestasi Dosen & <span>Institusi</span></h1>
+      <p class="subtitle">Analisis interaktif capaian prestasi berdasarkan program studi, tingkat capaian, kategori kejuaraan, penyelenggara, dan tren waktu. Data awal sudah tertanam dari Excel, namun dapat diperbarui dengan upload Excel baru.</p>
+      <div class="divider"></div>
+    </header>
+
+    <section class="toolbar">
+      <div class="pill"><span class="dot"></span><span id="recordPill">0 rekaman aktif</span></div>
+      <div class="actions">
+        <label class="fileBtn" for="excelFile">📤 Upload Excel Baru</label>
+        <input id="excelFile" type="file" accept=".xlsx,.xls" />
+        <button class="secondary" id="resetBtn">Reset Filter</button>
+      </div>
+    </section>
+
+    <section class="filters card fade1">
+      <div class="filter"><label>Program Studi</label><select id="fProdi"></select></div>
+      <div class="filter"><label>Tingkat Capaian</label><select id="fTingkat"></select></div>
+      <div class="filter"><label>Kategori Kejuaraan</label><select id="fKategori"></select></div>
+      <div class="filter"><label>Cari Nama / Kejuaraan</label><input id="fSearch" placeholder="Ketik kata kunci..." /></div>
+    </section>
+
+    <section class="grid-kpi">
+      <div class="card kpi blue fade1"><div class="icon">📌</div><div class="label">Total Prestasi</div><div class="value" id="kTotal">0</div><div class="note">Jumlah seluruh entri setelah filter</div></div>
+      <div class="card kpi teal fade2"><div class="icon">🌍</div><div class="label">Internasional</div><div class="value" id="kIntl">0</div><div class="note">Capaian tingkat internasional</div></div>
+      <div class="card kpi green fade3"><div class="icon">🥇</div><div class="label">Juara 1</div><div class="value" id="kJuara1">0</div><div class="note">Prestasi kategori juara pertama</div></div>
+      <div class="card kpi amber fade4"><div class="icon">🏫</div><div class="label">Program Studi Aktif</div><div class="value" id="kProdi">0</div><div class="note">Prodi yang memiliki rekaman prestasi</div></div>
+    </section>
+
+    <section class="row2">
+      <div class="card fade1">
+        <div class="card-title"><div><h2>Tren Prestasi per Bulan</h2><p>Jumlah prestasi berdasarkan tanggal capaian</p></div></div>
+        <div id="trendChart" class="chart"></div>
+      </div>
+      <div class="card fade2">
+        <div class="card-title"><div><h2>Komposisi Tingkat Capaian</h2><p>Nasional, internasional, dan regional</p></div></div>
+        <div id="levelDonut" class="chart"></div>
+      </div>
+    </section>
+
+    <section class="row2">
+      <div class="card fade3">
+        <div class="card-title"><div><h2>Prestasi per Program Studi</h2><p>Ranking kontribusi berdasarkan jumlah entri</p></div></div>
+        <div id="prodiBar" class="chart"></div>
+      </div>
+      <div class="card fade4">
+        <div class="card-title"><div><h2>Kategori Kejuaraan</h2><p>Distribusi Juara 1, Juara 2, Juara 3, dan lainnya</p></div></div>
+        <div id="kategoriDonut" class="chart"></div>
+      </div>
+    </section>
+
+    <section class="row3">
+      <div class="card fade1"><div class="card-title"><div><h2>Top Dosen</h2><p>Dosen dengan jumlah prestasi terbanyak</p></div></div><div id="dosenBar" class="chart small"></div></div>
+      <div class="card fade2"><div class="card-title"><div><h2>Penyelenggara</h2><p>Top penyelenggara kegiatan</p></div></div><div id="orgBar" class="chart small"></div></div>
+      <div class="card fade3"><div class="card-title"><div><h2>Jenis Prestasi</h2><p>Individu atau institusi/kelompok</p></div></div><div id="jenisDonut" class="chart small"></div></div>
+    </section>
+
+    <section class="insights">
+      <div class="card fade4">
+        <div class="card-title"><div><h2>Executive Insights</h2><p>Ringkasan otomatis dari data aktif</p></div></div>
+        <div class="list" id="insights"></div>
+      </div>
+      <div class="card fade5">
+        <div class="card-title"><div><h2>Highlight Strategis</h2><p>Area yang dapat diperkuat</p></div></div>
+        <div class="list" id="strategy"></div>
+      </div>
+    </section>
+
+    <section class="card table-card fade6">
+      <div class="table-head">
+        <div class="card-title" style="margin:0"><div><h2>Data Detail Prestasi</h2><p>Gunakan filter dan pencarian untuk eksplorasi data</p></div></div>
+        <button id="exportCsv">Download CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead></thead><tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+<script>
+const embeddedData = [{"Timestamp": "2026-04-01", "Score": 0, "Nama Lengkap": "apt. Nunung Yulia, M.Si", "Program Studi": "D III Farmasi Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Internasional", "Tanggal": "2026-11-02", "sebutkan kejuaraan sesuai sertifikatnya": "The 3rd Internasional Herbal Creativity and Innovation Competition", "Kategori Kejuaraan": "Juara 3", "tuliskan penyelenggaranya": "Jamukesta, Poltekkes Surakarta", "upload": "https://drive.google.com/open?id=1S8qkzkP3igeESJrFKCMSUENqijdzM0Lu"}, {"Timestamp": "2026-04-01", "Score": 0, "Nama Lengkap": "Dr.apt. Nur Aji, M.Farm", "Program Studi": "D III Farmasi Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Internasional", "Tanggal": "2026-11-02", "sebutkan kejuaraan sesuai sertifikatnya": "The 3rd Internasional Herbal Creativity and Innovation Competition", "Kategori Kejuaraan": "Juara 3", "tuliskan penyelenggaranya": "dpp_ppkestrajamanas", "upload": "https://drive.google.com/open?id=17p4ti056CyukjTVdvWU75NYUw8ai2-fV"}, {"Timestamp": "2026-04-01", "Score": 0, "Nama Lengkap": "apt. Nooryza Martihandini, M.Farm", "Program Studi": "D III Farmasi Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Internasional", "Tanggal": "2026-11-02", "sebutkan kejuaraan sesuai sertifikatnya": "The 3rd Internasional Herbal Creativity and Innovation Competition", "Kategori Kejuaraan": "Juara 3", "tuliskan penyelenggaranya": "dpp-ppkestrajamnas", "upload": "https://drive.google.com/open?id=1hxhmE6MY-Fsa6UZGYZlSghqY5gN28V4F"}, {"Timestamp": "2026-04-02", "Score": 0, "Nama Lengkap": "Lia Herliana", "Program Studi": "D III Keperawatan Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Daerah/ Regional", "Tanggal": "2026-01-13", "sebutkan kejuaraan sesuai sertifikatnya": "PENULIS SOAL TERBAIK” Uji Kompetensi Nasional", "Kategori Kejuaraan": "Penghargaan Lainnya", "tuliskan penyelenggaranya": "AIPVIKI Regional 4 Jawa Barat Banten", "upload": "https://drive.google.com/open?id=1DazvIQ6c0CXnAKakd407G1WiwDNs7ONT"}, {"Timestamp": "2026-05-21", "Score": 0, "Nama Lengkap": "Asep Kuswandi", "Program Studi": "D III Keperawatan Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Nasional", "Tanggal": "2025-09-13", "sebutkan kejuaraan sesuai sertifikatnya": "Kejuaraan silaturahmi tennis alumni unpad 2025", "Kategori Kejuaraan": "Juara 2", "tuliskan penyelenggaranya": "ikatan alumi unpad ", "upload": "https://drive.google.com/open?id=1VarPRbRnzROL0skCMam4bXWe-VD4hlcy, https://drive.google.com/open?id=14Cskyj1xndVWgirOdYBMim4lOjxSGWOS, https://drive.google.com/open?id=1g90ZxcQGDRwjJRa-UNnWyFCLlB6z7IRu"}, {"Timestamp": "2026-05-21", "Score": 0, "Nama Lengkap": "Asep Kuswandi", "Program Studi": "D III Keperawatan Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Nasional", "Tanggal": "2026-05-02", "sebutkan kejuaraan sesuai sertifikatnya": "Kejuaraan silaturahmi tennis alumni unpad ke 2 tahun 2026", "Kategori Kejuaraan": "Juara 2", "tuliskan penyelenggaranya": "ikatan alumni unpad", "upload": "https://drive.google.com/open?id=1TFTHeXxWX2p81pSQIto3WWd6nE9Sch7h, https://drive.google.com/open?id=1t6PCLwRpEKclTaGulwJmLSJwOpGGYbdI, https://drive.google.com/open?id=1T6jZ4kXWw5gDxRTquhon8SsTwPAoQMc5"}, {"Timestamp": "2026-05-21", "Score": 0, "Nama Lengkap": "Asep Kuswandi", "Program Studi": "D III Keperawatan Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Daerah/ Regional", "Tanggal": "2025-09-07", "sebutkan kejuaraan sesuai sertifikatnya": "Kejuaran tennis MTC CUP IV 2025", "Kategori Kejuaraan": "Juara 1", "tuliskan penyelenggaranya": "MTC Kota Tasikmalaya", "upload": "https://drive.google.com/open?id=1rOdxbGgZ2LJ49pYVvZfAnrVm7tg34_b1, https://drive.google.com/open?id=1BXc2jYpqYyy8_wyXcdcUISn2aXVYy19W"}, {"Timestamp": "2026-05-22", "Score": 0, "Nama Lengkap": "Dr. apt. Nur Aji, M.farm", "Program Studi": "D III Farmasi Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Nasional", "Tanggal": "2026-05-21", "sebutkan kejuaraan sesuai sertifikatnya": "WISE National Paper Competition", "Kategori Kejuaraan": "Juara 3", "tuliskan penyelenggaranya": "WISE Pendidikan Indonesia", "upload": "https://drive.google.com/open?id=1Km3Q_llSt2Scvhcpfx0TKNhpjYgM9sg2"}, {"Timestamp": "2026-05-22", "Score": 0, "Nama Lengkap": "Dr. Arief Tarmansyah Iman, M.KM", "Program Studi": "D III RMIK Tasikmalaya", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Nasional", "Tanggal": "2026-05-21", "sebutkan kejuaraan sesuai sertifikatnya": "WISE Paper National Competition 2026", "Kategori Kejuaraan": "Juara 3", "tuliskan penyelenggaranya": "WISE Pendidikan Indonesia", "upload": "https://drive.google.com/open?id=1bBGBvfV7wQ29uC9TqqsiQHYB5xduH1Z_"}, {"Timestamp": "2026-05-22", "Score": 0, "Nama Lengkap": "Eyet Hidayat", "Program Studi": "D III Keperawatan Cirebon", "Jenis Prestasi": "Individu", "Tingkat Capaian Prestasi": "Daerah/ Regional", "Tanggal": "2026-05-09", "sebutkan kejuaraan sesuai sertifikatnya": "Peserta terbaik dalam Workshop penyusunan RPS berbasis OBE", "Kategori Kejuaraan": "Juara 1", "tuliskan penyelenggaranya": "AIPVIKI Regionan 4 Jabar - Banten", "upload": "https://drive.google.com/open?id=1ZvYgq31Ig_Felf4S87MlLAmbabq4Qx9e"}];
+
+let rawData = embeddedData.map(cleanRow);
+let filtered = [...rawData];
+
+const COLORS = ['#2563eb','#0891b2','#059669','#d97706','#7c3aed','#e11d48','#0f766e','#9333ea'];
+const LEVEL_COLORS = {'Internasional':'#2563eb','Nasional':'#059669','Daerah/ Regional':'#d97706','Regional':'#d97706','Daerah':'#d97706'};
+const KATEGORI_COLORS = {'Juara 1':'#059669','Juara 2':'#0891b2','Juara 3':'#7c3aed','Penghargaan Lainnya':'#d97706'};
+
+function cleanRow(r){
+  const find = (...keys) => keys.map(k => r[k]).find(v => v !== undefined && v !== null && String(v).trim() !== '') || '';
+  return {
+    timestamp: parseDate(find('Timestamp')),
+    score: Number(find('Score')) || 0,
+    nama: String(find('Nama Lengkap','Nama','Dosen')).trim(),
+    prodi: String(find('Program Studi','Prodi')).trim(),
+    jenis: String(find('Jenis Prestasi')).trim(),
+    tingkat: String(find('Tingkat Capaian Prestasi','Tingkat')).trim(),
+    tanggal: parseDate(find('Tanggal','Tanggal Prestasi')),
+    kejuaraan: String(find('sebutkan kejuaraan sesuai sertifikatnya','Kejuaraan','Nama Kejuaraan')).trim(),
+    kategori: String(find('Kategori Kejuaraan','Kategori')).trim(),
+    penyelenggara: String(find('tuliskan penyelenggaranya','Penyelenggara')).trim(),
+    upload: String(find('upload','Upload','Bukti')).trim()
+  }
+}
+
+function parseDate(v){
+  if(!v) return '';
+  if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
+  const s=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  const d=new Date(s);
+  if(!isNaN(d)) return d.toISOString().slice(0,10);
+  return s;
+}
+function fmtMonth(iso){
+  if(!iso) return 'Tanpa tanggal';
+  const d = new Date(iso+'T00:00:00');
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString('id-ID', {month:'short', year:'numeric'});
+}
+function countBy(arr, key){
+  return arr.reduce((a,r)=>{ const k=(r[key]||'Tidak diisi'); a[k]=(a[k]||0)+1; return a; },{});
+}
+function sortEntries(obj){ return Object.entries(obj).sort((a,b)=>b[1]-a[1] || String(a[0]).localeCompare(String(b[0]))); }
+function uniq(arr,key){ return [...new Set(arr.map(r=>r[key]).filter(Boolean))].sort(); }
+
+function initFilters(){
+  fillSelect('fProdi', uniq(rawData,'prodi'));
+  fillSelect('fTingkat', uniq(rawData,'tingkat'));
+  fillSelect('fKategori', uniq(rawData,'kategori'));
+}
+function fillSelect(id, vals){
+  const el=document.getElementById(id);
+  el.innerHTML='<option value="">Semua</option>'+ vals.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+}
+function applyFilters(){
+  const prodi = document.getElementById('fProdi').value;
+  const tingkat = document.getElementById('fTingkat').value;
+  const kategori = document.getElementById('fKategori').value;
+  const q = document.getElementById('fSearch').value.toLowerCase().trim();
+  filtered = rawData.filter(r => 
+    (!prodi || r.prodi===prodi) &&
+    (!tingkat || r.tingkat===tingkat) &&
+    (!kategori || r.kategori===kategori) &&
+    (!q || [r.nama,r.kejuaraan,r.penyelenggara,r.prodi,r.tingkat,r.kategori].join(' ').toLowerCase().includes(q))
+  );
+  renderAll();
+}
+function renderAll(){
+  document.getElementById('recordPill').textContent = `${filtered.length} rekaman aktif`;
+  document.getElementById('kTotal').textContent = filtered.length;
+  document.getElementById('kIntl').textContent = filtered.filter(r=>/internasional/i.test(r.tingkat)).length;
+  document.getElementById('kJuara1').textContent = filtered.filter(r=>/juara\s*1/i.test(r.kategori)).length;
+  document.getElementById('kProdi').textContent = uniq(filtered,'prodi').length;
+  renderTrend(); renderLevel(); renderProdi(); renderKategori(); renderDosen(); renderOrg(); renderJenis(); renderInsights(); renderTable();
+}
+function layoutBase(title=''){
+ return {font:{family:'Poppins, sans-serif', color:'#0f172a'}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', margin:{l:45,r:20,t:20,b:55}, showlegend:true, legend:{orientation:'h', y:-0.18}, hoverlabel:{font:{family:'Poppins'}}};
+}
+function renderTrend(){
+  const months = {};
+  filtered.forEach(r=>{ const m=fmtMonth(r.tanggal); months[m]=(months[m]||0)+1; });
+  const entries=Object.entries(months).sort((a,b)=> new Date('1 '+a[0]) - new Date('1 '+b[0]));
+  Plotly.newPlot('trendChart',[{x:entries.map(e=>e[0]), y:entries.map(e=>e[1]), type:'scatter', mode:'lines+markers', line:{shape:'spline', color:'#2563eb', width:4}, marker:{size:9}, fill:'tozeroy', fillcolor:'rgba(37,99,235,.12)', hovertemplate:'%{x}<br><b>%{y}</b> prestasi<extra></extra>'}], {
+    ...layoutBase(), xaxis:{gridcolor:'#e2e8f0'}, yaxis:{gridcolor:'#e2e8f0', rangemode:'tozero', dtick:1}
+  }, {displayModeBar:false, responsive:true});
+}
+function renderDonut(id, obj, colorMap={}){
+  const entries=sortEntries(obj); 
+  Plotly.newPlot(id,[{labels:entries.map(e=>e[0]), values:entries.map(e=>e[1]), type:'pie', hole:.58, textinfo:'label+percent', marker:{colors:entries.map((e,i)=>colorMap[e[0]]||COLORS[i%COLORS.length])}, hovertemplate:'%{label}<br><b>%{value}</b> entri<extra></extra>'}], {
+    ...layoutBase(), margin:{l:10,r:10,t:10,b:35}, legend:{orientation:'h', y:-.05}
+  }, {displayModeBar:false, responsive:true});
+}
+function renderLevel(){ renderDonut('levelDonut', countBy(filtered,'tingkat'), LEVEL_COLORS); }
+function renderKategori(){ renderDonut('kategoriDonut', countBy(filtered,'kategori'), KATEGORI_COLORS); }
+function renderJenis(){ renderDonut('jenisDonut', countBy(filtered,'jenis'), {'Individu':'#2563eb','Kelompok':'#0891b2','Institusi':'#059669'}); }
+function renderBar(id, obj, limit=10, horizontal=true){
+  const entries=sortEntries(obj).slice(0,limit).reverse();
+  Plotly.newPlot(id,[{x:entries.map(e=>e[1]), y:entries.map(e=>e[0]), type:'bar', orientation:'h', marker:{color:entries.map((_,i)=>i), colorscale:[[0,'#2563eb'],[1,'#0891b2']]}, hovertemplate:'%{y}<br><b>%{x}</b> entri<extra></extra>'}], {
+    ...layoutBase(), margin:{l:170,r:20,t:10,b:40}, xaxis:{gridcolor:'#e2e8f0', dtick:1}, yaxis:{automargin:true}
+  }, {displayModeBar:false, responsive:true});
+}
+function renderProdi(){ renderBar('prodiBar', countBy(filtered,'prodi'), 10); }
+function renderDosen(){ renderBar('dosenBar', countBy(filtered,'nama'), 8); }
+function renderOrg(){ renderBar('orgBar', countBy(filtered,'penyelenggara'), 8); }
+function topName(key){ const e=sortEntries(countBy(filtered,key))[0]; return e?e:['-',0]; }
+function renderInsights(){
+  const [topProdi, nProdi]=topName('prodi'), [topTingkat,nTingkat]=topName('tingkat'), [topKat,nKat]=topName('kategori'), [topDosen,nDosen]=topName('nama');
+  document.getElementById('insights').innerHTML = [
+    ['🏆', 'Program studi paling aktif', `${topProdi} menyumbang ${nProdi} prestasi dari data aktif.`],
+    ['🌐', 'Tingkat capaian dominan', `${topTingkat} menjadi tingkat capaian terbanyak dengan ${nTingkat} entri.`],
+    ['🥇', 'Kategori paling sering muncul', `${topKat} tercatat sebanyak ${nKat} entri.`],
+    ['👤', 'Dosen paling produktif', `${topDosen} memiliki ${nDosen} rekaman prestasi.`]
+  ].map((x,i)=>`<div class="item"><div class="badge">${x[0]}</div><div><b>${x[1]}</b><span>${x[2]}</span></div></div>`).join('');
+  const intl=filtered.filter(r=>/internasional/i.test(r.tingkat)).length;
+  const j1=filtered.filter(r=>/juara\s*1/i.test(r.kategori)).length;
+  document.getElementById('strategy').innerHTML = [
+    ['📈','Dorong capaian internasional', `Saat ini terdapat ${intl} prestasi internasional. Data ini dapat menjadi indikator reputasi dan rekognisi eksternal.`],
+    ['🎯','Perkuat dokumentasi bukti prestasi', `Pastikan setiap entri memiliki tautan upload sertifikat agar mudah diverifikasi dan dilaporkan.`],
+    ['🔍','Pantau pemerataan prodi', `Ada ${uniq(filtered,'prodi').length} program studi aktif; prodi dengan capaian rendah dapat diberi pendampingan target prestasi.`],
+    ['⭐','Targetkan kualitas capaian', `Terdapat ${j1} Juara 1. Dashboard ini bisa dipakai untuk memantau peningkatan kualitas prestasi dari waktu ke waktu.`]
+  ].map((x,i)=>`<div class="item"><div class="badge">${x[0]}</div><div><b>${x[1]}</b><span>${x[2]}</span></div></div>`).join('');
+}
+function renderTable(){
+  const headers=['Tanggal','Nama Lengkap','Program Studi','Tingkat','Kategori','Kejuaraan','Penyelenggara','Bukti'];
+  document.querySelector('#dataTable thead').innerHTML='<tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+  document.querySelector('#dataTable tbody').innerHTML=filtered.map(r=>`<tr>
+    <td>${escapeHtml(formatDate(r.tanggal))}</td>
+    <td><b>${escapeHtml(r.nama)}</b><br><span style="color:#64748b">${escapeHtml(r.jenis)}</span></td>
+    <td>${escapeHtml(r.prodi)}</td>
+    <td>${escapeHtml(r.tingkat)}</td>
+    <td>${escapeHtml(r.kategori)}</td>
+    <td>${escapeHtml(r.kejuaraan)}</td>
+    <td>${escapeHtml(r.penyelenggara)}</td>
+    <td>${r.upload ? `<a href="${escapeAttr(r.upload.split(',')[0].trim())}" target="_blank">Lihat</a>` : '-'}</td>
+  </tr>`).join('');
+}
+function formatDate(iso){
+  if(!iso) return '-'; const d=new Date(iso+'T00:00:00'); return isNaN(d)?iso:d.toLocaleDateString('id-ID',{day:'2-digit', month:'short', year:'numeric'});
+}
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+document.querySelectorAll('select,input').forEach(el=>el.addEventListener('input', applyFilters));
+document.getElementById('resetBtn').addEventListener('click', ()=>{ document.getElementById('fProdi').value=''; document.getElementById('fTingkat').value=''; document.getElementById('fKategori').value=''; document.getElementById('fSearch').value=''; applyFilters(); });
+document.getElementById('exportCsv').addEventListener('click', ()=>{
+  const rows=[['Tanggal','Nama Lengkap','Program Studi','Jenis Prestasi','Tingkat Capaian','Kategori Kejuaraan','Kejuaraan','Penyelenggara','Upload'], ...filtered.map(r=>[r.tanggal,r.nama,r.prodi,r.jenis,r.tingkat,r.kategori,r.kejuaraan,r.penyelenggara,r.upload])];
+  const csv=rows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='prestasi_dosen_filtered.csv'; a.click(); URL.revokeObjectURL(url);
+});
+document.getElementById('excelFile').addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const buf=await file.arrayBuffer(); const wb=XLSX.read(buf,{type:'array', cellDates:true}); const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{defval:'', raw:false});
+  rawData=rows.map(cleanRow); filtered=[...rawData]; initFilters(); applyFilters();
+});
+
+initFilters(); renderAll();
+window.addEventListener('resize', ()=>{ ['trendChart','levelDonut','prodiBar','kategoriDonut','dosenBar','orgBar','jenisDonut'].forEach(id=>Plotly.Plots.resize(id)); });
+</script>
+</body>
+</html>
